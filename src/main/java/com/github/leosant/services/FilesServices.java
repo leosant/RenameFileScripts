@@ -24,7 +24,6 @@ public class FilesServices implements IManagerFile {
     /**
      * Altera o nome do arquivo segundo o nome de sua respectiva pasta
      * E encaminha para o mesmo local de destino
-     * @throws IOException
      */
     @Override
     public void getFiles() throws IOException {
@@ -35,8 +34,8 @@ public class FilesServices implements IManagerFile {
     @Override
     public void getFiles(String destinyPath, File files, String nameArchive) throws IOException {
 
-        for (File f : Objects.requireNonNull(files.listFiles())) {
-
+        for (File f : Objects.requireNonNull(files.listFiles()))
+        {
             if (f.isDirectory() && Objects.requireNonNull(f.list()).length > 0)
             {
                 getFiles(destinyPath, f, nameArchive);
@@ -44,17 +43,22 @@ public class FilesServices implements IManagerFile {
             else
             {
                 String name = nameFile.fileName(destinyPath, f, nameArchive);
-
-                if (f.renameTo(new File(name)))
+                if (renameToFile(name, f))
                 {
-                    System.out.println("ARQUIVO RENOMEADO COM SUCESSO" + name);
+                        System.out.println("ARQUIVO RENOMEADO COM SUCESSO" + name);
                 }
                 else
                 {
                     throw new IOException("NAO FOI POSSIVEL RENOMEAR O ARQUIVO");
                 }
+
             }
         }
+
+    }
+
+    private boolean renameToFile(String newName, File file) {
+            return file.renameTo(new File(newName));
     }
 
     static {

@@ -12,7 +12,7 @@ import java.util.Date;
 
 public class FileName implements IFileName {
 
-    private static final SimpleDateFormat SDF = new SimpleDateFormat("dd-MM-yyyy");
+    private final SimpleDateFormat formatDate = new SimpleDateFormat("dd-MM-yyyy");
 
     @Override
     public String fileName(File file) {
@@ -40,7 +40,7 @@ public class FileName implements IFileName {
     private String getFileCreationTime(BasicFileAttributes fileAttributes) {
 
         Date date = new Date(fileAttributes.creationTime().toMillis());
-        return SDF.format(date);
+        return formatDate.format(date);
     }
 
     private String renameToFile(String destinyPath, String extractFile, File file) {
@@ -62,7 +62,7 @@ public class FileName implements IFileName {
         if (StringUtils.isNotBlank(s)) {
             if (!s.contains("-")) {
                 long timestamp = Long.parseLong(s);
-                return SDF.format(new Date(timestamp));
+                return formatDate.format(new Date(timestamp));
             }
             else {
                 if (s.length() > 8) {
