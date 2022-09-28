@@ -24,7 +24,7 @@ public class FileName implements IFileName {
     public String fileName(String destinyPath, File file, String fileName) {
 
         try {
-            String dateMetadata = getAttributesFile(Files.readAttributes(file.toPath(), BasicFileAttributes.class));
+            String dateMetadata = getFileCreationTime(Files.readAttributes(file.toPath(), BasicFileAttributes.class));
 
             if (fileName != null) {
                 return renameToFile(destinyPath,fileName.concat("_") + dateMetadata, file);
@@ -37,7 +37,7 @@ public class FileName implements IFileName {
         }
     }
 
-    private String getAttributesFile(BasicFileAttributes fileAttributes) {
+    private String getFileCreationTime(BasicFileAttributes fileAttributes) {
 
         Date date = new Date(fileAttributes.creationTime().toMillis());
         return SDF.format(date);
