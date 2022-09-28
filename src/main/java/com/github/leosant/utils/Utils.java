@@ -5,9 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
-import java.util.logging.Logger;
 
 public class Utils {
 
@@ -18,55 +16,58 @@ public class Utils {
     public static void renameFileStream() {
 
         File filePath = new File(PATH);
-        String nameType = null;
-        List<String> nameFile;
-        Date date = null;
+        getFiles(filePath);
 
+    }
 
-        //TODO: Tratar com timezone
+    public static void getFiles(File file) {
 
-        try
-        {
-            for (File file : Objects.requireNonNull(filePath.listFiles())) {
+        for (File f : Objects.requireNonNull(file.listFiles())) {
 
-                for (File f : Objects.requireNonNull(file.listFiles())) {
-
-                    nameFile = List.of(f.getName().split("[^\\d-.]"));
-
-                    for (String s : nameFile) {
-
-                        if (StringUtils.isNotBlank(s)) {
-
-                            if (!s.contains("-")) {
-                                long timestamp = Long.parseLong(s);
-                                date = new Date(timestamp);
-                            }
-                            else {
-
-                                nameType = s;
-                            }
-                        }
-
-                    }
-
-                    String[] splitParent = f.getParent().split("/");
-                    String dateFormat = nameType != null ? nameType : SDF.format(date);
-                    String nameDocument =  f.getParent() + "/" + splitParent[splitParent.length-1] + "_" + dateFormat;
-
-                    if (f.renameTo(new File(nameDocument))) {
-                        nameType = "NODATE";
-                        Logger.getLogger("RENOMEADO COM SUCESSO!");
-                    }
-
-                    Logger.getLogger("OCORREU UM ERROR");
-                }
+            if (f.isDirectory() && Objects.requireNonNull(f.list()).length > 0) {
+                getFiles(f);
             }
 
+                String name = onlyNumberString(f);
+                String nameFileDate = validString(name);
+
+                if (StringUtils.isNotBlank(nameFileDate)) {
+                    renameToFile(nameFileDate, f);
+                }
+
         }
-        catch (Exception e)
-        {
-            e.getMessage();
+    }
+
+    private static boolean renameToFile(String extractFile, File file) {
+
+        String[] splitParent = file.getParent().split("/");
+        String nameDocument =  file.getParent() + "/" + splitParent[splitParent.length-1] + "_" + extractFile;
+
+        return file.renameTo(new File(nameDocument));
+    }
+
+    private static String onlyNumberString(File file) {
+        return file.getName().replaceAll("[^\\d-]", "");
+    }
+
+    private static String validString(String s) {
+
+        if (StringUtils.isNotBlank(s)) {
+            if (!s.contains("-")) {
+                long timestamp = Long.parseLong(s);
+                return SDF.format(new Date(timestamp));
+            }
+            else {
+                if (s.length() > 8) {
+
+                    return s.substring(0, 10);
+                }
+                else {
+                    return s.substring(0, 6).concat("20" + s.substring(6, 8));
+                }
+            }
         }
+        return "";
     }
 
     static {
