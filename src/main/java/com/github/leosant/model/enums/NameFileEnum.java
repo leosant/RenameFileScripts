@@ -1,4 +1,4 @@
-package com.github.leosant.model.dto;
+package com.github.leosant.model.enums;
 
 public enum NameFileEnum {
 

@@ -1,33 +1,42 @@
 package com.github.leosant.services;
 
+import com.github.leosant.model.enums.InstanceArchiveEnum;
+import com.github.leosant.model.enums.NameFileEnum;
 import com.github.leosant.services.interfaces.IFileName;
 import com.github.leosant.services.interfaces.IManagerFile;
+import com.github.leosant.services.interfaces.ITypeArchive;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.pdfbox.io.RandomAccessRead;
-import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.apache.pdfbox.io.RandomAccessReadBufferedFile;
 import org.apache.pdfbox.pdfparser.PDFParser;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
-import org.apache.pdfbox.text.PDFTextStripper;
-import org.apache.pdfbox.tools.PDFBox;
+import org.apache.pdfbox.tools.PDFText2HTML;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.Objects;
+import java.util.*;
 
-public class FilesServices implements IManagerFile {
+public class FilesService implements IManagerFile {
     private static final String PATH;
-    private final File files;
+    private final File file;
     private final IFileName nameFile;
+    private List<NameFileEnum> nameFileEnums;
 
-    private FilesServices() {
-        this.files = new File(PATH);
-        this.nameFile = new FileName();
+    private FilesService() {
+        this.file = new File(PATH);
+        this.nameFile = new FileNameService();
     }
 
     public static IManagerFile factoryFile() {
-        return new FilesServices();
+        return new FilesService();
+    }
+
+    /**
+     * Salva a instancia de configuracao para de para dos nomes dos comprovantes
+     */
+    @Override
+    public void setNameFileEnums(List<NameFileEnum> nameFileEnums) {
+        this.nameFileEnums = nameFileEnums;
     }
 
     /**
@@ -36,34 +45,50 @@ public class FilesServices implements IManagerFile {
      */
     @Override
     public void getFiles() throws IOException {
-        getFiles(null, files, null);
+        getFiles(null, file, null);
     }
 
     @Override
     public void getFiles(String destinyPath, File files, String nameArchive) throws IOException {
 
-        for (File f : Objects.requireNonNull(files.listFiles())) {
-            if (f.isDirectory() && Objects.requireNonNull(f.list()).length > 0) {
-                getFiles(destinyPath, f, nameArchive);
+        for (File file : Objects.requireNonNull(files.listFiles())) {
+            if (file.isDirectory() && Objects.requireNonNull(file.list()).length > 0) {
+                getFiles(destinyPath, file, nameArchive);
             } else {
-//                PDFParser parser;
-//                RandomAccessRead randomAccessRead = new RandomAccessReadBufferedFile(f);
-//                parser = new PDFParser(randomAccessRead);
-//                PDDocument ttt = parser.parse();
+                InstanceArchiveEnum.instanceOf(file.getPath().split("\\.")[1])
+                        .ifPresent(ITypeArchive::convertTo);
+                RandomAccessRead randomAccessRead = new RandomAccessReadBufferedFile(file);
+                PDFParser parser = new PDFParser(randomAccessRead);
+                PDDocument pdDocument = parser.parse();
+                PDFText2HTML pdfText2HTML = new PDFText2HTML();
 
-//                PDFTextStripper pdfTextStripper = new PDFTextStripper();
-//                String text = pdfTextStripper.getText(ttt);
+                String textoComprovateComTagsHtml = StringEscapeUtils.unescapeHtml4(pdfText2HTML.getText(pdDocument));
 
-                String text = "Comprovante do Pagamento 14/04/2023 - 15:43:54 Valor pago R$ 58,13 Identificação do pagamento 9hRvok6q1OlcfiKpZiPX2vpqRDR6yYf1tNq Forma de pagamento Ag 2327 Cc 1023266-4 Dados do recebedor Para Tesoura De Ouro CNPJ 36***.***/0001-5* Instituição ITAU UNIBANCO S.A.Dados do pagador De Leonardo Dos Santos Bonfim CPF ***.056.991-**Instituição BCO SANTANDER (BRASIL) S.A.ID/Transação E9040088820230414184310258449438 Data e hora da transação 14/04/2023 - 15:43:54 Comprovante do Pagamento 1/2 Código de autenticação B0D04360582843251587107 4004-3535 (Capitais e Regiões Metropolitanas)0800-702-3535 (Demais Localidades)SAC 0800-762-7777 Ouvidoria 0800-726-0332 Central de Atendimento Santander Comprovante do Pagamento 2/2";
+                String[] textoCompravateComTagsHtmlVector = textoComprovateComTagsHtml.replaceAll("\r","")
+                        .replaceAll("</p>", "")
+                        .split("<p>");
 
-                System.out.println(text);
+                Map<String, String> teste = new HashMap<>();
+                for (String texto : textoCompravateComTagsHtmlVector) {
+                    if (texto.contains("Para")) {
+                        String valorPara = texto.split("\n")[1];
 
-                String name = nameFile.fileName(destinyPath, f, nameArchive);
-                if (renameToFile(name, f)) {
-                    System.out.println("ARQUIVO RENOMEADO COM SUCESSO" + name);
-                } else {
-                    throw new IOException("NAO FOI POSSIVEL RENOMEAR O ARQUIVO");
+                        teste.put("para", valorPara);
+                        return;
+                    }
                 }
+
+                randomAccessRead.close();
+                pdDocument.close();
+
+//                String name = nameFile.fileName(destinyPath, file, nameArchive);
+
+//                boolean isArchiveRenamed = renameToFile(name, file);
+//                if (isArchiveRenamed) {
+//                    System.out.println("ARQUIVO RENOMEADO COM SUCESSO" + name);
+//                } else {
+                    throw new IOException("NAO FOI POSSIVEL RENOMEAR O ARQUIVO");
+//                }
             }
         }
     }
