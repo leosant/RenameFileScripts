@@ -10,7 +10,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class FileName implements IFileName {
+public class FileNameService implements IFileName {
 
     private final SimpleDateFormat formatDate = new SimpleDateFormat("dd-MM-yyyy");
 
