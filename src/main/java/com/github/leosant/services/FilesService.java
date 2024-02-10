@@ -6,7 +6,6 @@ import com.github.leosant.model.dto.ArchiveDataDto;
 import com.github.leosant.model.dto.ArchiveDataPresentDtos;
 import com.github.leosant.model.dto.ArchiveErroDto;
 import com.github.leosant.model.enums.InstanceArchiveEnum;
-import com.github.leosant.model.enums.NameFileEnum;
 import com.github.leosant.services.filenames.FileNameService;
 import com.github.leosant.services.interfaces.IFileName;
 import com.github.leosant.services.interfaces.IManagerFile;
