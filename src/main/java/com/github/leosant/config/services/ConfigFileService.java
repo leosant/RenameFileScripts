@@ -1,4 +1,4 @@
-package com.github.leosant.services;
+package com.github.leosant.config.services;
 
 import com.github.leosant.model.enums.NameFileEnum;
 

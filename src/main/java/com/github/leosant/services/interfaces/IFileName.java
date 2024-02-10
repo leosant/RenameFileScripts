@@ -1,10 +1,8 @@
 package com.github.leosant.services.interfaces;
 
-import java.io.File;
+import com.github.leosant.model.dto.ArchiveDataDto;
 
-public interface IFileName {
+public interface IFileName extends IFileNameMetaData {
 
-    String fileName(File file);
-
-    String fileName(String destinyPath, File file, String fileName);
+    String formatName(ArchiveDataDto archiveDataDto);
 }

@@ -22,7 +22,7 @@ public enum InstanceArchiveEnum {
     public static Optional<ITypeArchive> instanceOf(String extension) {
         for (InstanceArchiveEnum instanceArchiveEnum : InstanceArchiveEnum.values()) {
             if (Objects.equals(instanceArchiveEnum.getExtension(), extension)) {
-                return Optional.ofNullable(instanceArchiveEnum.getiTypeArchive());
+                return Optional.ofNullable(instanceArchiveEnum.getTypeArchive());
             }
         }
         return Optional.empty();
@@ -32,7 +32,7 @@ public enum InstanceArchiveEnum {
         return extension;
     }
 
-    public ITypeArchive getiTypeArchive() {
+    public ITypeArchive getTypeArchive() {
         return iTypeArchive;
     }
 }

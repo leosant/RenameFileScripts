@@ -1,10 +1,11 @@
 package com.github.leosant.services.interfaces;
 
-import com.github.leosant.model.dto.DataArchiveDto;
+import com.github.leosant.model.dto.ArchiveDataDto;
 
-import java.util.List;
+import java.io.File;
+import java.util.Optional;
 
 public interface ITypeArchive {
 
-    List<DataArchiveDto> convertTo();
+    Optional<ArchiveDataDto> convertTo(File file);
 }

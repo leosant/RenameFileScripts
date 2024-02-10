@@ -1,6 +1,6 @@
-package com.github.leosant.services;
+package com.github.leosant.services.filenames;
 
-import com.github.leosant.services.interfaces.IFileName;
+import com.github.leosant.services.interfaces.IFileNameMetaData;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -10,18 +10,16 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class FileNameService implements IFileName {
+class FileNameMetaDataService implements IFileNameMetaData {
 
     private final SimpleDateFormat formatDate = new SimpleDateFormat("dd-MM-yyyy");
 
-    @Override
-    public String fileName(File file) {
+    public String formatNameMetaData(File file) {
 
-        return fileName(null, file, null);
+        return formatNameMetaData(null, file, null);
     }
 
-    @Override
-    public String fileName(String destinyPath, File file, String fileName) {
+    public String formatNameMetaData(String destinyPath, File file, String fileName) {
 
         try {
             String dateMetadata = getFileCreationTime(Files.readAttributes(file.toPath(), BasicFileAttributes.class));
