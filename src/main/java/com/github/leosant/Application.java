@@ -29,15 +29,10 @@ public class Application {
         }
     }
 
-    public static void renameWithValueDirectory(List<NameFileEnum> nameFileEnums) throws IOException {
+    public static void renameWithValueDirectory(List<NameFileEnum> nameFileEnums) {
          IManagerFile filesService = FilesService.factoryFile();
          filesService.setNameFileEnums(nameFileEnums);
          filesService.getFiles();
     }
 
-    public static void renameWithValueFile() throws IOException {
-
-        FilesService.factoryFile()
-                .getFiles("", new File(""), "TEST");
-    }
 }

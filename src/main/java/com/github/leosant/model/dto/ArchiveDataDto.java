@@ -11,7 +11,7 @@ public class ArchiveDataDto {
         this.extensionEnum = extensionEnum;
     }
 
-    private ExtensionEnum extensionEnum;
+    private final ExtensionEnum extensionEnum;
 
     private String transactionDate;
 

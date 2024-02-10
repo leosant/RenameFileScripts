@@ -26,7 +26,6 @@ public class FilesService implements IManagerFile {
     private final ArchiveDataPresentDtos archiveDataPresentDtos = new ArchiveDataPresentDtos();
     private final File file;
     private final IFileName fileName;
-    private List<NameFileEnum> nameFileEnums;
 
     private FilesService() {
         this.file = new File(PATH);
@@ -35,14 +34,6 @@ public class FilesService implements IManagerFile {
 
     public static IManagerFile factoryFile() {
         return new FilesService();
-    }
-
-    /**
-     * Salva a instancia de configuracao para de para dos nomes dos comprovantes
-     */
-    @Override
-    public void setNameFileEnums(List<NameFileEnum> nameFileEnums) {
-        this.nameFileEnums = nameFileEnums;
     }
 
     /**

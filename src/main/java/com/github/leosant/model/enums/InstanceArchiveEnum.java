@@ -10,9 +10,9 @@ public enum InstanceArchiveEnum {
 
     PDF("pdf", new PdfStragety());
 
-    private String extension;
+    private final String extension;
 
-    private ITypeArchive iTypeArchive;
+    private final ITypeArchive iTypeArchive;
 
     InstanceArchiveEnum(String extension, ITypeArchive iTypeArchive) {
         this.extension = extension;
