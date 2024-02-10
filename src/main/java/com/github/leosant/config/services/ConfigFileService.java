@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+@SuppressWarnings(value = "unused")
 public class ConfigFileService {
 
     private static final String PATH;
