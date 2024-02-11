@@ -1,6 +1,7 @@
 package com.github.leosant.model.enums;
 
 import com.github.leosant.services.interfaces.ITypeArchive;
+import com.github.leosant.services.strategies.ImageStrategy;
 import com.github.leosant.services.strategies.PdfStragety;
 
 import java.util.Objects;
@@ -8,7 +9,11 @@ import java.util.Optional;
 
 public enum InstanceArchiveEnum {
 
-    PDF("pdf", new PdfStragety());
+    PDF("pdf", new PdfStragety(ExtensionEnum.PDF)),
+    JPEG("jpeg", new ImageStrategy(ExtensionEnum.JPEG)),
+    JPG("jpg", new ImageStrategy(ExtensionEnum.JPG)),
+    PNG("png", new ImageStrategy(ExtensionEnum.PNG));
+
 
     private final String extension;
 

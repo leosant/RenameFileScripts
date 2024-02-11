@@ -2,7 +2,10 @@ package com.github.leosant.model.enums;
 
 public enum ExtensionEnum {
 
-    PDF(".pdf");
+    PDF(".pdf"),
+    JPEG(".jpeg"),
+    JPG(".jpg"),
+    PNG(".png");
 
     private final String name;
 

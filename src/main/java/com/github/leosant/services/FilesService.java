@@ -56,7 +56,7 @@ public class FilesService implements IManagerFile {
         }
 
         if (archiveDataPresentDtos.getArchiveErroDtos().isEmpty()
-                || archiveDataPresentDtos.getArchiveDataDtos().isEmpty()) {
+                && archiveDataPresentDtos.getArchiveDataDtos().isEmpty()) {
             return;
         }
 
@@ -73,11 +73,11 @@ public class FilesService implements IManagerFile {
             return;
         }
 
-        Optional<String> isArchivePermitted = Arrays.stream(path.get(0).split("\\\\"))
+        Optional<String> isPastePermitted = Arrays.stream(path.get(0).split("\\\\"))
                 .filter(namedArchives -> namedArchives.equalsIgnoreCase("renomeados"))
                 .findFirst();
 
-        if (isArchivePermitted.isPresent()) {
+        if (isPastePermitted.isPresent()) {
             return;
         }
 
@@ -101,7 +101,7 @@ public class FilesService implements IManagerFile {
     }
 
     private void renameArchiveDataDtos(List<ArchiveDataDto> archiveDataDtos) {
-        log.info("QUANTIDADE DE ARQUIVOS PRONTOS PARA SER RENOMEADOS É DE: " + archiveDataDtos.size());
+        log.info("QUANTIDADE DE ARQUIVOS PRONTOS PARA SEREM RENOMEADOS É DE: " + archiveDataDtos.size());
 
         archiveDataDtos.forEach(archiveDataDto -> {
             File file = new File(archiveDataDto.getDestiny());
