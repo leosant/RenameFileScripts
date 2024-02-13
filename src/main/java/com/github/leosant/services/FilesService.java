@@ -1,14 +1,14 @@
 package com.github.leosant.services;
 
-import com.github.leosant.config.model.enums.MessageLogEnum;
 import com.github.leosant.config.services.Log;
 import com.github.leosant.model.dto.ArchiveDataDto;
 import com.github.leosant.model.dto.ArchiveDataPresentDtos;
-import com.github.leosant.model.dto.ArchiveErroDto;
+import com.github.leosant.model.dto.ArchiveErrorDto;
 import com.github.leosant.model.enums.InstanceArchiveEnum;
 import com.github.leosant.services.filenames.FileNameService;
 import com.github.leosant.services.interfaces.IFileName;
 import com.github.leosant.services.interfaces.IManagerFile;
+import com.github.leosant.services.interfaces.ITypeArchive;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -48,22 +48,41 @@ public class FilesService implements IManagerFile {
     public void getFiles(String destinyPath, File files, String nameArchive) {
         for (File file : Objects.requireNonNull(files.listFiles())) {
             if (file.isDirectory() && Objects.requireNonNull(file.list()).length > 0) {
+                log.info(Constants.FINDING_ARCHIVE);
                 getFiles(destinyPath, file, nameArchive);
             } else {
-                log.info(Constants.PREPARED_ARCHIVE);
                 preparedArchiveData(file);
             }
         }
 
-        if (archiveDataPresentDtos.getArchiveErroDtos().isEmpty()
-                && archiveDataPresentDtos.getArchiveDataDtos().isEmpty()) {
+        renameArchives();
+    }
+
+    private void renameArchives() {
+        if (isArchivesDataEmpty()) {
             return;
         }
 
-        renameArchiveDataDtos(archiveDataPresentDtos.getArchiveDataDtos());
-        logMessageOfErrors(archiveDataPresentDtos.getArchiveErroDtos());
+        try {
+            renameArchiveDataDtos(archiveDataPresentDtos.getArchiveDataDtos());
+            logMessageOfErrors(archiveDataPresentDtos.getArchiveErroDtos());
+            clearInstanceArchiveDataDPresentDtos();
+        } catch (InterruptedException e) {
+            log.error(Constants.THREAD_FAIL);
+        }
 
-        log.info(MessageLogEnum.Constants.QUIT);
+        log.info(Constants.QUIT);
+    }
+
+    private void clearInstanceArchiveDataDPresentDtos() {
+        log.info(Constants.CLEANING_ARCHIVE);
+        archiveDataPresentDtos.getArchiveDataDtos().clear();
+        archiveDataPresentDtos.getArchiveErroDtos().clear();
+    }
+
+    private boolean isArchivesDataEmpty() {
+        return archiveDataPresentDtos.getArchiveErroDtos().isEmpty()
+                && archiveDataPresentDtos.getArchiveDataDtos().isEmpty();
     }
 
     private void preparedArchiveData(File file) {
@@ -73,52 +92,68 @@ public class FilesService implements IManagerFile {
             return;
         }
 
-        Optional<String> isPastePermitted = Arrays.stream(path.get(0).split("\\\\"))
+        Optional<String> isPasteRenamed = Arrays.stream(path.get(0).split("\\\\"))
                 .filter(namedArchives -> namedArchives.equalsIgnoreCase("renomeados"))
                 .findFirst();
 
-        if (isPastePermitted.isPresent()) {
+        if (isPasteRenamed.isPresent()) {
             return;
         }
 
-        int indexOfExtension = path.size()-1;
+        int indexOfExtension = path.size() - 1;
         InstanceArchiveEnum.instanceOf(path.get(indexOfExtension))
-                .ifPresentOrElse(typeInstance -> {
-                            ArchiveDataDto archiveDataDto = typeInstance.convertTo(file).orElse(null);
-                            if (Objects.nonNull(archiveDataDto)) {
-                                archiveDataPresentDtos.getArchiveDataDtos().add(archiveDataDto);
-                            }
-                        },
+                .ifPresentOrElse(typeInstance -> preparedArchiveByExtension(file, typeInstance),
                         () -> archiveDataPresentDtos.getArchiveErroDtos()
-                                .add(getArchiveErroDtoToExtensionNotFound(file)));
+                                .add(getArchiveErroDtoToExtensionNotFound(file, "Sem implementação para esse tipo de extensão do arquivo")));
     }
 
-    private ArchiveErroDto getArchiveErroDtoToExtensionNotFound(File file) {
-        ArchiveErroDto archiveErroDto = new ArchiveErroDto();
-        archiveErroDto.setPath(file.getPath());
-        archiveErroDto.setMessageErro("Sem implementação para esse tipo de extensão do arquivo");
-        return archiveErroDto;
+    private void preparedArchiveByExtension(File file, ITypeArchive typeInstance) {
+        ArchiveDataDto archiveDataDto = typeInstance.convertTo(file).orElse(null);
+        if (Objects.nonNull(archiveDataDto)) {
+            archiveDataPresentDtos.getArchiveDataDtos().add(archiveDataDto);
+        } else {
+            archiveDataPresentDtos.getArchiveErroDtos()
+                    .add(getArchiveErroDtoToExtensionNotFound(file, "arquivo está nulo"));
+        }
     }
 
-    private void renameArchiveDataDtos(List<ArchiveDataDto> archiveDataDtos) {
-        log.info("QUANTIDADE DE ARQUIVOS PRONTOS PARA SEREM RENOMEADOS É DE: " + archiveDataDtos.size());
+    private ArchiveErrorDto getArchiveErroDtoToExtensionNotFound(File file, String message) {
+        ArchiveErrorDto archiveErrorDto = new ArchiveErrorDto();
+        archiveErrorDto.setPath(file.getPath());
+        archiveErrorDto.setMessageError(message);
+        return archiveErrorDto;
+    }
 
-        archiveDataDtos.forEach(archiveDataDto -> {
+    private void renameArchiveDataDtos(List<ArchiveDataDto> archiveDataDtos) throws InterruptedException {
+        log.info(Constants.ARCHIVE_DONE_RENAME + archiveDataDtos.size());
+
+        for (ArchiveDataDto archiveDataDto : archiveDataDtos) {
             File file = new File(archiveDataDto.getDestiny());
             if (file.isDirectory()) {
                 executeRenamed(archiveDataDto);
-                return;
-            }
-
-            if (file.mkdirs()) {
+            } else if (file.mkdirs()) {
                 executeRenamed(archiveDataDto);
             }
-        });
+        }
     }
 
-    private void executeRenamed(ArchiveDataDto archiveDataDto) {
+    private void executeRenamed(ArchiveDataDto archiveDataDto) throws InterruptedException {
         boolean isRenamed = renameToFile(
                 fileName.formatName(archiveDataDto), archiveDataDto.getFile());
+
+        logMessageRenamed(archiveDataDto, isRenamed);
+
+        if (isRenamed) {
+            return;
+        }
+
+        failRenamed(archiveDataDto);
+    }
+
+    private void failRenamed(ArchiveDataDto archiveDataDto) throws InterruptedException {
+        Thread.sleep(1000);
+        boolean isRenamed = renameToFile(fileName.formatNameToFileRepeated(archiveDataDto), archiveDataDto.getFile());
+        log.warn(Constants.TRY_RENAMED_AGAIN + archiveDataDto.getNamedArchive());
         logMessageRenamed(archiveDataDto, isRenamed);
     }
 
@@ -129,16 +164,17 @@ public class FilesService implements IManagerFile {
     private void logMessageRenamed(ArchiveDataDto archiveDataDto, boolean isRenamed) {
         if (isRenamed) {
             log.info(Constants.RENAMED_SUCCESS + archiveDataDto.getNamedArchive());
-        } else {
-            log.error(Constants.RENAMED_FAIL + archiveDataDto.getFile().getName());
+            return;
         }
+        log.error(Constants.RENAMED_FAIL + archiveDataDto.getFile().getName());
     }
 
-    private void logMessageOfErrors(List<ArchiveErroDto> archiveErroDtos) {
-        log.info("QUANTIDADE DE ARQUIVOS COM ERROS É DE: " + archiveErroDtos.size());
+    private void logMessageOfErrors(List<ArchiveErrorDto> archiveErrorDtos) {
+        log.info(Constants.ARCHIVE_FAIL_RENAME + archiveErrorDtos.size());
 
-        archiveErroDtos.forEach(archiveErroDto -> log.error(archiveErroDto.getMessageErro().concat(" - ")
-                .concat(archiveErroDto.getPath())));
+        archiveErrorDtos.forEach(archiveErrorDto ->
+                log.error(archiveErrorDto.getMessageError().concat(" - ")
+                .concat(archiveErrorDto.getPath())));
     }
 
     static {

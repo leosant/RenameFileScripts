@@ -30,68 +30,68 @@ public class PdfStragety implements ITypeArchive {
 
     @Override
     public Optional<ArchiveDataDto> convertTo(File file) {
+        log.info(Constants.STARTING_PDF + file.getName());
 
         try (RandomAccessReadBufferedFile randomAccessRead = new RandomAccessReadBufferedFile(file)) {
-            log.info("INICIANDO TRATATIVA POR PDF PARA O ARQUIVO: " + file.getName());
             Thread.sleep(1000);
 
             String textInHtml = getTextInHtml(randomAccessRead);
-            String[] textOfPdf = getTextWithTagsSubstract(textInHtml);
+            List<String> textOfPdf = Arrays.stream(getTextWithTagsSubstract(textInHtml)).toList();
 
-            if (isPdfEmpty(textOfPdf)
-                    || isPdfProgramatic(textOfPdf)) {
+            if (isPdfEmpty(textOfPdf) || isPdfProgramatic(textOfPdf)) {
                 log.warn(Constants.QUIT);
-                Thread.sleep(1000);
                 return Optional.empty();
             }
 
-            ArchiveDataDto archiveDataDto = getArchiveDataDto(file, Arrays.asList(textOfPdf));
+            Optional<ArchiveDataDto> archiveDataDtoOptional = getArchiveDataDto(file, textOfPdf);
 
-            if (Objects.isNull(archiveDataDto)) {
+            if (archiveDataDtoOptional.isEmpty()) {
                 return Optional.empty();
             }
 
-            log.info(Constants.RENAMEDING_ARCHIVE + archiveDataDto.getNamedArchive());
+            log.info(Constants.RENAMED_ARCHIVE + archiveDataDtoOptional.get().getNamedArchive());
             randomAccessRead.close();
 
-            return Optional.of(archiveDataDto);
+            return archiveDataDtoOptional;
         } catch (Exception e) {
             log.error(Constants.CONVERSION_FAIL + e.getMessage());
             return Optional.empty();
         }
     }
 
-    private ArchiveDataDto getArchiveDataDto(File file, List<String> textOfPdf) throws InterruptedException {
-        ArchiveDataDto archiveDataDto = new ArchiveDataDto(file, extensionEnum);
-
+    private Optional<ArchiveDataDto> getArchiveDataDto(File file, List<String> textOfPdf) throws InterruptedException, IOException {
         LinkedHashMap<String, String> textExtract = TextValidator.getExtractText(textOfPdf);
 
-        if (FileUtil.isTextIncomplete(textExtract.get("data"), textExtract.get("favoreci"))) {
-            log.error("ARQUIVO NÃO POSSUI DATA OU NOME - ARQUIVO: " + file.getName());
-            Thread.sleep(1000);
-            return null;
+        if (FileUtil.isNameEmpty(textExtract.get("para"), file.getName())) {
+            return Optional.empty();
         }
 
+        return Optional.of(builderArchiveDataDto(file, textExtract));
+    }
+
+    private ArchiveDataDto builderArchiveDataDto(File file, LinkedHashMap<String, String> textExtract) throws IOException, InterruptedException {
+        ArchiveDataDto archiveDataDto = new ArchiveDataDto(file, extensionEnum);
         archiveDataDto.setNamedArchive(textExtract.get("para"));
         archiveDataDto.setDestiny(FileUtil.getDestiny(file.getParent(), textExtract.get("para")));
-        archiveDataDto.setTransactionDate(FileUtil.getDateFormatted(textExtract.get("data"), textExtract.get("horario")));
+        archiveDataDto.setTransactionDate(FileUtil.chooseTransactionDate(textExtract, file));
         return archiveDataDto;
     }
 
-    private boolean isPdfProgramatic(String[] textOfPdf) throws InterruptedException {
-        boolean isProgrammaticFile = Arrays.stream(textOfPdf)
+
+    private boolean isPdfProgramatic(List<String> textOfPdf) throws InterruptedException {
+        boolean isProgrammaticFile = textOfPdf.stream()
                 .anyMatch(text -> StringUtils.containsIgnoreCase(text, "agendamento"));
 
         if (isProgrammaticFile) {
-            log.warn(Constants.PROGRAMATIC_FILE);
+            log.warn(Constants.PROGRAMMATIC_FILE);
             Thread.sleep(1000);
             return true;
         }
         return false;
     }
 
-    private static boolean isPdfEmpty(String[] textOfPdf) {
-        return textOfPdf.length == 0;
+    private static boolean isPdfEmpty(List<String> textOfPdf) {
+        return textOfPdf.isEmpty();
     }
 
     private static String[] getTextWithTagsSubstract(String textInHtml) {
@@ -106,7 +106,6 @@ public class PdfStragety implements ITypeArchive {
         PDFText2HTML pdfText2HTML = new PDFText2HTML();
 
         String textInHtml = StringEscapeUtils.unescapeHtml4(pdfText2HTML.getText(pdDocument));
-
         pdDocument.close();
 
         return textInHtml;

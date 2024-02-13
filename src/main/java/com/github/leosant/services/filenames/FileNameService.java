@@ -5,9 +5,10 @@ import com.github.leosant.services.interfaces.IFileName;
 import com.github.leosant.services.interfaces.IFileNameMetaData;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
 
 public class FileNameService implements IFileName {
-
     IFileNameMetaData fileNameMetaDataService;
 
     public FileNameService() {
@@ -23,6 +24,22 @@ public class FileNameService implements IFileName {
                 .concat(archiveDataDto.getTransactionDate())
                 .concat(")")
                 .concat(archiveDataDto.getExtensionEnum().getName());
+    }
+
+    @Override
+    public String formatNameToFileRepeated(ArchiveDataDto archiveDataDto) {
+         String identificador = UUID.randomUUID().toString();
+
+        return archiveDataDto.getDestiny()
+                .replace("/renomeados", "")
+                .concat("(ARQUIVO_REPETIDO)")
+                .concat(identificador.substring(0, 4))
+                .concat(archiveDataDto.getExtensionEnum().getName());
+    }
+
+    @Override
+    public String creationDateTimeMetaData(File file) throws IOException {
+        return fileNameMetaDataService.creationDateTimeMetaData(file);
     }
 
     @Override

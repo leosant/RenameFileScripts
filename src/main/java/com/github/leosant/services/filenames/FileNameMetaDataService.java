@@ -1,31 +1,44 @@
 package com.github.leosant.services.filenames;
 
+import com.github.leosant.config.services.Log;
 import com.github.leosant.services.interfaces.IFileNameMetaData;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
+import static com.github.leosant.config.model.enums.MessageLogEnum.Constants;
+
 class FileNameMetaDataService implements IFileNameMetaData {
+    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd'D'MM'M'yyyy'Y'");
+    private final Logger log = Log.local(FileNameMetaDataService.class);
 
-    private final SimpleDateFormat formatDate = new SimpleDateFormat("dd-MM-yyyy");
+    @Override
+    public String creationDateTimeMetaData(File file) throws IOException {
+        log.warn(Constants.INFORMATION_FILE_METADATA + file.getName());
+        return creationDateTime(file);
+    }
 
+    @Override
     public String formatNameMetaData(File file) {
-
         return formatNameMetaData(null, file, null);
     }
 
+    @Override
     public String formatNameMetaData(String destinyPath, File file, String fileName) {
 
         try {
-            String dateMetadata = getFileCreationTime(Files.readAttributes(file.toPath(), BasicFileAttributes.class));
+            String dateMetadata = creationDateTime(file);
 
             if (fileName != null) {
-                return renameToFile(destinyPath,fileName.concat("_") + dateMetadata, file);
+                return renameToFile(destinyPath,fileName + dateMetadata, file);
             }
             return renameToFile(destinyPath, dateMetadata, file);
 
@@ -35,10 +48,15 @@ class FileNameMetaDataService implements IFileNameMetaData {
         }
     }
 
-    private String getFileCreationTime(BasicFileAttributes fileAttributes) {
+    private String creationDateTime(File file) throws IOException {
+        return getFileCreationTime(Files.readAttributes(file.toPath(), BasicFileAttributes.class));
+    }
 
+    private String getFileCreationTime(BasicFileAttributes fileAttributes) {
         Date date = new Date(fileAttributes.creationTime().toMillis());
-        return formatDate.format(date);
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
+
+        return localDateTime.format(dateTimeFormatter);
     }
 
     private String renameToFile(String destinyPath, String extractFile, File file) {
@@ -60,7 +78,11 @@ class FileNameMetaDataService implements IFileNameMetaData {
         if (StringUtils.isNotBlank(s)) {
             if (!s.contains("-")) {
                 long timestamp = Long.parseLong(s);
-                return formatDate.format(new Date(timestamp));
+                LocalDateTime localDateTime = LocalDateTime.ofInstant(
+                        new Date(timestamp).toInstant(),
+                        ZoneId.systemDefault());
+
+                return localDateTime.format(dateTimeFormatter);
             }
             else {
                 if (s.length() > 8) {

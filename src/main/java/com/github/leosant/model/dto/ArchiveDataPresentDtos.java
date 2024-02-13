@@ -7,13 +7,13 @@ public class ArchiveDataPresentDtos {
 
     private final List<ArchiveDataDto> archiveDataDtos = new LinkedList<>();
 
-    private final List<ArchiveErroDto> archiveErroDtos = new LinkedList<>();
+    private final List<ArchiveErrorDto> archiveErroDtos = new LinkedList<>();
 
     public List<ArchiveDataDto> getArchiveDataDtos() {
         return archiveDataDtos;
     }
 
-    public List<ArchiveErroDto> getArchiveErroDtos() {
+    public List<ArchiveErrorDto> getArchiveErroDtos() {
         return archiveErroDtos;
     }
 }

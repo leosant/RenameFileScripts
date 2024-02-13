@@ -1,27 +1,28 @@
 package com.github.leosant.services.validator;
 
+import com.github.leosant.model.enums.MonthEnum;
 import org.apache.commons.lang3.StringUtils;
 
-import java.time.DateTimeException;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TextValidator {
-
     private static final String[] TEXT_TO_EXTRACT = {
             "para",
-            "favorecido",
-            "favoreci"
+            "favorec"
     };
 
     private static final String[] REGEX_OF_DATE = {
             "(\\d{2}/\\d{2}/\\d{4}) - (\\d{2}:\\d{2}:\\d{2})",
-            "(\\d{2}\\s+[A-Z]{3}\\s+\\d{4}) - (\\d{2}:\\d{2}:\\d{2})"
+            "(\\d{2}\\s+[A-Z]{3}\\s+\\d{4}) - (\\d{2}:\\d{2}:\\d{2})",
+            "(\\d{2}\\s+[A-Z]{3}\\s+\\d{4}) - (\\d{2}:\\d{2})"
     };
 
     private TextValidator() {
@@ -70,10 +71,13 @@ public class TextValidator {
             return textEscape.get(1).replaceAll(" ", "");
         }
 
-        return Arrays.stream(textEscape.get(0).split(" "))
-                .filter(StringUtils::isNotEmpty)
-                .filter(text -> !StringUtils.containsIgnoreCase(text, "favoreci"))
-                .collect(Collectors.joining());
+        return Normalizer.normalize(Arrays.stream(textEscape.get(0).split(" "))
+                        .filter(StringUtils::isNotEmpty)
+                        .filter(text -> !StringUtils.containsIgnoreCase(text, "favorec"))
+                        .collect(Collectors.joining()), Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}", "")
+                .replaceAll("\\|", "")
+                .toUpperCase();
     }
 
     private static List<Pattern> patternsTypeOfDate() {
@@ -100,13 +104,11 @@ public class TextValidator {
     private static Map<String, String> getDateByText(String text, List<Pattern> patterns) {
         LinkedHashMap<String, String> saveTextOfDateFound = new LinkedHashMap<>();
         for (Pattern pattern : patterns) {
-            if (text.length() == 22) {
-                text = text.substring(0,2)
-                        .replaceAll("O", "0")
-                        .concat(text.substring(2, 22));
-            }
+            text = replacedTextIncomplete(text);
+
             Matcher matcher = pattern.matcher(text);
-            if (!matcher.find()) {
+            if (!matcher.find()
+                    || Objects.nonNull(saveTextOfDateFound.get("data"))) {
                 continue;
             }
 
@@ -115,6 +117,17 @@ public class TextValidator {
         }
 
         return saveTextOfDateFound;
+    }
+
+    private static String replacedTextIncomplete(String text) {
+        if (text.length() >= 22) {
+            text = text.substring(0, 2)
+                    .replaceAll("O", "0")
+                    .replaceAll("S", "")
+                    .replaceAll("B", "")
+                    .concat(text.substring(2, 22));
+        }
+        return text;
     }
 
     private static LinkedHashMap<String, String> matcherGroupDate(Matcher matcher) {
@@ -132,7 +145,7 @@ public class TextValidator {
 
         try {
             localDate = LocalDate.parse(date, dateTimeFormatter);
-        } catch (DateTimeException dateTimeException) {
+        } catch (DateTimeParseException dateTimeParseException) {
             date = convertDate(date);
             localDate = LocalDate.parse(date, dateTimeFormatter);
         }
@@ -143,37 +156,27 @@ public class TextValidator {
 
     private static String convertDate(String date) {
         String[] dateFormat = date.split(" ");
-        Map<String, String> months = new HashMap<>();
-        months.put("JAN", "01");
-        months.put("FEV", "02");
-        months.put("MAR", "03");
-        months.put("ABR", "04");
-        months.put("MAI", "05");
-        months.put("JUN", "06");
-        months.put("JUL", "07");
-        months.put("AGO", "08");
-        months.put("SET", "09");
-        months.put("OUT", "10");
-        months.put("NOV", "11");
-        months.put("DEZ", "12");
 
         StringBuilder text = new StringBuilder(dateFormat[0]);
-        for (String monthKey : months.keySet()) {
-            if (monthKey.equalsIgnoreCase(dateFormat[1])) {
-                text.append("/")
-                        .append(months.get(dateFormat[1]))
-                        .append("/")
-                        .append(dateFormat[2]);
-                break;
-            }
-        }
+        MonthEnum.getMonthValid(dateFormat[1])
+                .ifPresent(monthNumber ->
+                        text.append("/")
+                                .append(monthNumber.getNumber())
+                                .append("/")
+                                .append(dateFormat[2]));
 
         return text.toString();
     }
 
     private static String formatTime(String time) {
+        LocalTime localTime;
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-        LocalTime localTime = LocalTime.parse(time, dateTimeFormatter);
+        try {
+            localTime = LocalTime.parse(time, dateTimeFormatter);
+        } catch (DateTimeParseException dateTimeParseException) {
+            DateTimeFormatter dateTimeFormatterNoSeconds = DateTimeFormatter.ofPattern("HH:mm");
+            localTime = LocalTime.parse(time, dateTimeFormatterNoSeconds);
+        }
         dateTimeFormatter = DateTimeFormatter.ofPattern("HH'h'mm'm'ss's'");
         return localTime.format(dateTimeFormatter);
     }

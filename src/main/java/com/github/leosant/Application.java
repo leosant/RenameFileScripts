@@ -8,9 +8,9 @@ import org.slf4j.Logger;
 import static com.github.leosant.config.model.enums.MessageLogEnum.Constants;
 
 public class Application {
+    private static final Logger log = Log.local(Application.class);
 
     public static void main(String[] args) {
-        Logger log = Log.local(Application.class);
         try {
             log.info(Constants.INITIAL_AUTOMATIZED);
             Thread.sleep(1000);
@@ -22,6 +22,7 @@ public class Application {
     }
 
     public static void renameWithValueDirectory() {
+        log.info(Constants.PREPARED_ARCHIVE);
          IManagerFile filesService = FilesService.factoryFile();
          filesService.getFiles();
     }

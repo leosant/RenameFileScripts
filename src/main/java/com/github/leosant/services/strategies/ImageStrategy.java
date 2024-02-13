@@ -13,7 +13,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.util.*;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Optional;
 
 import static com.github.leosant.config.model.enums.MessageLogEnum.Constants;
 
@@ -27,47 +31,51 @@ public class ImageStrategy implements ITypeArchive {
 
     @Override
     public Optional<ArchiveDataDto> convertTo(File file) {
-        ITesseract tesseract = new Tesseract1();
-        tesseract.setLanguage("por");
+        ITesseract tesseract = configuratorTesseract();
+        log.info(Constants.STARTING_IMAGE + file.getName());
 
         try {
-            log.info("INICIANDO TRATATIVA POR IMAGEM PARA O ARQUIVO: " + file.getName());
-
             String text = tesseract.doOCR(file);
             List<String> textList = Arrays.stream(text.split("\\n"))
                     .filter(StringUtils::isNotEmpty)
                     .toList();
 
-            ArchiveDataDto archiveDataDto = getArchiveDataDto(file, textList);
+            Optional<ArchiveDataDto> archiveDataDtoOptional = getArchiveDataDto(file, textList);
 
-            if (Objects.isNull(archiveDataDto)) {
+            if (archiveDataDtoOptional.isEmpty()) {
                 return Optional.empty();
             }
 
-            log.info(Constants.RENAMEDING_ARCHIVE + archiveDataDto.getNamedArchive());
+            log.info(Constants.RENAMED_ARCHIVE + archiveDataDtoOptional.get().getNamedArchive());
 
-            return Optional.of(archiveDataDto);
-        } catch (InterruptedException | TesseractException e) {
+            return archiveDataDtoOptional;
+        } catch (IOException | TesseractException | InterruptedException e) {
             log.error(Constants.CONVERSION_FAIL + file.getName().concat(" ") + e.getMessage());
             return Optional.empty();
         }
     }
 
-    private ArchiveDataDto getArchiveDataDto(File file, List<String> textOfPdf) throws InterruptedException {
-        ArchiveDataDto archiveDataDto = new ArchiveDataDto(file, extensionEnum);
-
+    private Optional<ArchiveDataDto> getArchiveDataDto(File file, List<String> textOfPdf) throws IOException, InterruptedException {
         LinkedHashMap<String, String> textExtract = TextValidator.getExtractText(textOfPdf);
 
-        if (FileUtil.isTextIncomplete(textExtract.get("data"), textExtract.get("favoreci"))) {
-            log.error("ARQUIVO NÃO POSSUI DATA OU NOME - ARQUIVO: " + file.getName());
-            Thread.sleep(1000);
-            return null;
+        if (FileUtil.isNameEmpty(textExtract.get("favorec"), file.getName())) {
+            return Optional.empty();
         }
 
-        archiveDataDto.setNamedArchive(textExtract.get("favoreci"));
-        archiveDataDto.setDestiny(FileUtil.getDestiny(file.getParent(), textExtract.get("favoreci")));
-        archiveDataDto.setTransactionDate(FileUtil.getDateFormatted(textExtract.get("data"), textExtract.get("horario")));
+        return Optional.of(builderArchiveDataDto(file, textExtract));
+    }
 
+    private ArchiveDataDto builderArchiveDataDto(File file, LinkedHashMap<String, String> textExtract) throws InterruptedException, IOException {
+        ArchiveDataDto archiveDataDto = new ArchiveDataDto(file, extensionEnum);
+        archiveDataDto.setNamedArchive(textExtract.get("favorec"));
+        archiveDataDto.setDestiny(FileUtil.getDestiny(file.getParent(), textExtract.get("favorec")));
+        archiveDataDto.setTransactionDate(FileUtil.chooseTransactionDate(textExtract, file));
         return archiveDataDto;
+    }
+
+    private ITesseract configuratorTesseract() {
+        ITesseract tesseract = new Tesseract1();
+        tesseract.setLanguage("por");
+        return tesseract;
     }
 }

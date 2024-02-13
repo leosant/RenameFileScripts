@@ -5,4 +5,6 @@ import com.github.leosant.model.dto.ArchiveDataDto;
 public interface IFileName extends IFileNameMetaData {
 
     String formatName(ArchiveDataDto archiveDataDto);
+
+    String formatNameToFileRepeated(ArchiveDataDto archiveDataDto);
 }
