@@ -1,4 +1,10 @@
 <configuration>
+    <appender name="JTextAreaAppender" class="com.github.leosant.config.view.JTextAreaAppenderInterceptorLog"/>
+
+    <root level="DEBUG">
+        <appender-ref ref="JTextAreaAppender"/>
+    </root>
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">
             <Pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{36}) - %green(%msg%n)</Pattern>

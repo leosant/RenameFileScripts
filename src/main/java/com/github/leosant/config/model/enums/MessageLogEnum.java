@@ -20,7 +20,8 @@ public enum MessageLogEnum {
     ARCHIVE_FAIL_RENAME("QUANTIDADE DE ARQUIVOS COM ERROS É DE: "),
     ARCHIVE_NO_NAME("ARQUIVO NÃO POSSUI NOME PARA O ARQUIVO: "),
     ARCHIVE_NO_DATE("ARQUIVO NÃO POSSUI DATA - ARQUIVO: "),
-    QUIT("ENCERRANDO...");
+    QUIT("ENCERRANDO..."),
+    EXIT_APPLICATION("PROCESSAMENTO DE ARQUIVOS FINALIZADOS, PODE ENCERRAR A APLICAÇÃO");
 
     private final String name;
 
@@ -48,5 +49,6 @@ public enum MessageLogEnum {
         public static final String ARCHIVE_NO_NAME = MessageLogEnum.ARCHIVE_NO_NAME.name;
         public static final String ARCHIVE_NO_DATE = MessageLogEnum.ARCHIVE_NO_DATE.name;
         public static final String QUIT = MessageLogEnum.QUIT.name;
+        public static final String EXIT_APPLICATION = MessageLogEnum.EXIT_APPLICATION.name;
     }
 }
